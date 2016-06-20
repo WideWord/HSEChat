@@ -15,6 +15,7 @@ class MainWindow : public QMainWindow
     Connection* connection;
     QLabel* statusLabel;
     QMap<QString, QString> messagesCache;
+    void resetState();
 
     LoginMessage loginMessage;
 public:

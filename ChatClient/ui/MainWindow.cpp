@@ -109,7 +109,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(socket, &QTcpSocket::disconnected, [this]() {
         setEnabled(false);
         statusLabel->setText("Соединение потеряно");
-
+        resetState();
         loginDialog.show();
     });
 
@@ -194,6 +194,17 @@ MainWindow::MainWindow(QWidget *parent) :
             ui.messageField->setText("");
         }
     });
+
+    connect(qApp, &QApplication::aboutToQuit, [this]() {
+        socket->disconnectFromHost();
+    });
+}
+
+void MainWindow::resetState() {
+    messagesCache.clear();
+    ui.usersListWidget->clear();
+    ui.messagesTextView->setPlainText("");
+    ui.messageField->setText("");
 }
 
 void MainWindow::showEvent(QShowEvent *ev) {
