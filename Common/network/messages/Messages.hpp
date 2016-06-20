@@ -2,6 +2,7 @@
 #include "../Serializer.hpp"
 #include "../../util/TypeIndex.hpp"
 #include <QString>
+#include <QDate>
 
 struct LoginMessage {
     QString username;
@@ -40,6 +41,16 @@ struct AddContactMessage {
     }
 };
 
+struct AddContactResultMessage {
+    QString contactUsername;
+    bool ok;
+
+    void operator%(Serializer& s) {
+        contactUsername %s;
+        ok %s;
+    }
+};
+
 struct RemoveContactMessage {
     QString contactUsername;
 
@@ -48,10 +59,56 @@ struct RemoveContactMessage {
     }
 };
 
+struct MessagesRequestMessage {
+    QString contactUsername;
+
+    void operator%(Serializer& s) {
+        contactUsername %s;
+    }
+};
+
+struct ChatMessage {
+    QDate date;
+    QString body;
+
+    void operator%(Serializer& s) {
+        date %s;
+        body %s;
+    }
+};
+
+struct MessagesMessage {
+
+    QString contactUsername;
+    QList<ChatMessage> messages;
+
+    void opeator%(Serializer& s) {
+        contactUsername %s;
+        messages %s;
+    }
+};
+
+struct NewMessageMessage {
+    QString sender;
+    QString receiver;
+    ChatMessage message;
+
+
+    void opeator%(Serializer& s) {
+        sender %s;
+        receiver %s
+        message %s;
+    }
+};
+
 template<typename M> using MessageTypeIndex = TypeIndex<M,
 LoginMessage,
 LoginResultMessage,
 ContactListMessage,
 AddContactMessage,
-RemoveContactMessage
+AddContactResultMessage,
+RemoveContactMessage,
+MessagesRequestMessage,
+MessagesMessage,
+NewMessageMessage
 >;

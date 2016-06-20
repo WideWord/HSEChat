@@ -7,8 +7,8 @@
 
 class ChatServer : public QTcpServer {
     Q_OBJECT
-    QList<ClientHandler*> clientHandlers;
 public:
+    QList<ClientHandler*> clientHandlers;
     ChatServer();
 };
 

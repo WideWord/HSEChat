@@ -1,8 +1,10 @@
 #include "ClientHandler.hpp"
 #include <QSqlQuery>
+#include "ChatServer.hpp"
 
-ClientHandler::ClientHandler(QTcpSocket* socket, QObject* parent) : QObject(parent) {
+ClientHandler::ClientHandler(QTcpSocket* socket, ChatServer* _server, QObject* parent) : QObject(parent) {
     connection = new Connection(socket, this);
+    server = _server;
 
     connection->setIncomingMessageHandler<LoginMessage>([this](const LoginMessage& msg) {
         qDebug() << "Login message";
@@ -40,6 +42,79 @@ ClientHandler::ClientHandler(QTcpSocket* socket, QObject* parent) : QObject(pare
                 loggedIn = false;
                 qDebug() << "Login Failure";
                 connection->sendMessage(LoginResultMessage::Failure);
+            }
+        }
+    });
+
+    connection->setIncomingMessageHandler<AddContactMessage>([this](const AddContactMessage& msg) {
+        if (!loggedIn) return;
+
+        if (msg.contactUsername == username) {
+            AddContactResultMessage res;
+            res.contactUsername = msg.contactUsername;
+            res.ok = false;
+            connection->sendMessage(res);
+            return;
+        }
+
+        QSqlQuery query("SELECT username FROM users WHERE username=?");
+        query.addBindValue(msg.contactUsername);
+        query.exec();
+        if (!query.next()) {
+            AddContactResultMessage res;
+            res.contactUsername = msg.contactUsername;
+            res.ok = false;
+            connection->sendMessage(res);
+            return;
+        }
+
+        query = QSqlQuery("SELECT * FROM contacts WHERE (user1=? AND user2=?) OR (user1=? AND user2=?)");
+        query.addBindValue(username);
+        query.addBindValue(msg.contactUsername);
+        query.addBindValue(msg.contactUsername);
+        query.addBindValue(username);
+        query.exec();
+        if (query.next()) {
+            AddContactResultMessage res;
+            res.contactUsername = msg.contactUsername;
+            res.ok = false;
+            connection->sendMessage(res);
+            return;
+        }
+
+        query = QSqlQuery("INSERT INTO contacts(user1, user2) VALUES (?, ?)");
+        query.addBindValue(username);
+        query.addBindValue(msg.contactUsername);
+        query.exec();
+
+        AddContactResultMessage res;
+        res.contactUsername = msg.contactUsername;
+        res.ok = true;
+        connection->sendMessage(res);
+
+        for (auto& client : server->clientHandlers) {
+            if (!client->loggedIn) continue;
+            if (client->username == username || client->username == msg.contactUsername) {
+                client->sendContactList();
+            }
+        }
+    });
+
+    connection->setIncomingMessageHandler<RemoveContactMessage>([this](const RemoveContactMessage& msg) {
+        if (!loggedIn) return;
+
+
+        QSqlQuery query("DELETE FROM contacts WHERE (user1=? AND user2=?) OR (user1=? AND user2=?)");
+        query.addBindValue(username);
+        query.addBindValue(msg.contactUsername);
+        query.addBindValue(msg.contactUsername);
+        query.addBindValue(username);
+        query.exec();
+
+        for (auto& client : server->clientHandlers) {
+            if (!client->loggedIn) continue;
+            if (client->username == username || client->username == msg.contactUsername) {
+                client->sendContactList();
             }
         }
     });

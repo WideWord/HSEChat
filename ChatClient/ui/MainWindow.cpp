@@ -1,6 +1,8 @@
 #include "MainWindow.hpp"
 #include "LoginDialog.hpp"
 #include <QUrl>
+#include <QInputDialog>
+#include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -16,6 +18,58 @@ MainWindow::MainWindow(QWidget *parent) :
     statusLabel->setText("Не подключён");
     setEnabled(false);
 
+    connect(ui.exitButton, &QPushButton::clicked, [this]() {
+        socket->disconnectFromHost();
+    });
+
+    connect(ui.addContactButton, &QPushButton::clicked, [this]() {
+        QInputDialog* dialog = new QInputDialog(this);
+        dialog->setLabelText("Введите имя контакта:");
+        dialog->setModal(true);
+        dialog->setCancelButtonText("Отменить");
+        dialog->setOkButtonText("Добавить");
+        connect(dialog, &QInputDialog::accepted, [this, dialog]() {
+            AddContactMessage msg;
+            msg.contactUsername = dialog->textValue();
+            connection->sendMessage(msg);
+        });
+        dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+        dialog->show();
+    });
+
+    connect(ui.deleteContactButton, &QPushButton::clicked, [this]() {
+        if (ui.usersListWidget->selectedItems().length() == 0) {
+            return;
+        }
+        QString contact = ui.usersListWidget->selectedItems().first()->text();
+        QMessageBox* box = new QMessageBox(QMessageBox::Question, "Удалить контакт", "Вы уверены что хотите удалить контакт " + contact + "?",
+                                           QMessageBox::No | QMessageBox::Yes);
+        box->setModal(true);
+        box->setAttribute(Qt::WA_DeleteOnClose, true);
+
+        connect(box, &QMessageBox::finished, [this, contact](int result) {
+            if (result != QMessageBox::Yes) {
+                return;
+            }
+            RemoveContactMessage msg;
+            msg.contactUsername = contact;
+            connection->sendMessage(msg);
+        });
+
+        box->show();
+    });
+
+    connection->setIncomingMessageHandler<AddContactResultMessage>([this](const AddContactResultMessage& msg) {
+        QMessageBox* box;
+        if (msg.ok) {
+            box = new QMessageBox(QMessageBox::Information, "", "Контакт " + msg.contactUsername + " добавлен");
+        } else {
+            box = new QMessageBox(QMessageBox::Critical, "", "Не удалось добавить контакт " + msg.contactUsername);
+        }
+        box->setAttribute(Qt::WA_DeleteOnClose, true);
+        box->setModal(true);
+        box->show();
+    });
 
     connect(&loginDialog, &LoginDialog::rejected, [this]() {
         close();

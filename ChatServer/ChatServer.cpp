@@ -10,7 +10,7 @@ ChatServer::ChatServer() {
     connect(this, &QTcpServer::newConnection, [this]() {
         qDebug() << "New incoming connection";
         QTcpSocket* socket = nextPendingConnection();
-        ClientHandler* handler = new ClientHandler(socket, this);
+        ClientHandler* handler = new ClientHandler(socket, this, this);
         clientHandlers.append(handler);
     });
 }
