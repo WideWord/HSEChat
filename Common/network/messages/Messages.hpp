@@ -67,39 +67,52 @@ struct MessagesRequestMessage {
     }
 };
 
-struct ChatMessage {
-    QDate date;
-    QString body;
-
-    void operator%(Serializer& s) {
-        date %s;
-        body %s;
-    }
-};
 
 struct MessagesMessage {
 
-    QString contactUsername;
-    QList<ChatMessage> messages;
+    struct Message {
+        QDateTime date;
+        QString body;
+        bool isMyMessage;
+    };
 
-    void opeator%(Serializer& s) {
+    QString contactUsername;
+    QList<MessagesMessage::Message> messages;
+
+    void operator%(Serializer& s) {
         contactUsername %s;
         messages %s;
     }
 };
 
+inline QDataStream& operator<<(QDataStream& s, const MessagesMessage::Message& msg) {
+    s << msg.date;
+    s << msg.body;
+    s << msg.isMyMessage;
+    return s;
+}
+
+inline QDataStream& operator>>(QDataStream& s, MessagesMessage::Message& msg) {
+    s >> msg.date;
+    s >> msg.body;
+    s >> msg.isMyMessage;
+    return s;
+}
+
 struct NewMessageMessage {
+    QDateTime date;
+    QString body;
     QString sender;
     QString receiver;
-    ChatMessage message;
 
-
-    void opeator%(Serializer& s) {
+    void operator%(Serializer& s) {
+        date %s;
+        body %s;
         sender %s;
-        receiver %s
-        message %s;
+        receiver %s;
     }
 };
+
 
 template<typename M> using MessageTypeIndex = TypeIndex<M,
 LoginMessage,

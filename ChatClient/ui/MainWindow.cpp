@@ -133,6 +133,67 @@ MainWindow::MainWindow(QWidget *parent) :
         ui.usersListWidget->clear();
         ui.usersListWidget->addItems(msg.users);
     });
+
+    connection->setIncomingMessageHandler<MessagesMessage>([this](const MessagesMessage& msg) {
+        QString cache;
+        for (MessagesMessage::Message chatMsg : msg.messages) {
+            cache += chatMsg.date.toString("yyyy.MM.dd hh:mm") + " " + (chatMsg.isMyMessage?loginMessage.username:msg.contactUsername);
+            cache += ": " + chatMsg.body + "\n";
+        }
+        messagesCache[msg.contactUsername] = cache;
+        if (ui.usersListWidget->selectedItems().length() != 0) {
+            if (ui.usersListWidget->selectedItems()[0]->text() == msg.contactUsername) {
+                ui.messagesTextView->setPlainText(cache);
+            }
+        }
+    });
+
+    connection->setIncomingMessageHandler<NewMessageMessage>([this](const NewMessageMessage& msg) {
+        QString contactUsername;
+        if (msg.sender == loginMessage.username) {
+            contactUsername = msg.receiver;
+        } else {
+            contactUsername = msg.sender;
+        }
+
+        if (messagesCache.contains(contactUsername)) {
+            messagesCache[contactUsername].append(msg.date.toString("yyyy.MM.dd hh:mm") + " " + msg.sender + ": " + msg.body + "\n");
+            if (ui.usersListWidget->selectedItems().length() != 0) {
+                if (ui.usersListWidget->selectedItems()[0]->text() == contactUsername) {
+                    ui.messagesTextView->setPlainText(messagesCache[contactUsername]);
+                }
+            }
+        }
+
+    });
+
+    connect(ui.usersListWidget, &QListWidget::itemSelectionChanged, [this]() {
+        if (ui.usersListWidget->selectedItems().length() != 0) {
+            QString contact = ui.usersListWidget->selectedItems()[0]->text();
+            if (messagesCache.contains(contact)) {
+                ui.messagesTextView->setPlainText(messagesCache[contact]);
+            } else {
+                ui.messagesTextView->setPlainText("Загрузка истории...");
+                MessagesRequestMessage msg;
+                msg.contactUsername = contact;
+                connection->sendMessage(msg);
+            }
+        }
+    });
+
+    connect(ui.messageField, &QLineEdit::returnPressed, [this]() {
+        if (ui.messageField->text().length() == 0) {
+            return;
+        }
+        if (ui.usersListWidget->selectedItems().length() != 0) {
+            QString contact = ui.usersListWidget->selectedItems()[0]->text();
+            NewMessageMessage msg;
+            msg.receiver = contact;
+            msg.body = ui.messageField->text();
+            connection->sendMessage(msg);
+            ui.messageField->setText("");
+        }
+    });
 }
 
 void MainWindow::showEvent(QShowEvent *ev) {

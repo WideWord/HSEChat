@@ -57,14 +57,14 @@
      </layout>
     </item>
     <item>
-     <widget class="QPlainTextEdit" name="plainTextEdit">
+     <widget class="QPlainTextEdit" name="messagesTextView">
       <property name="readOnly">
        <bool>true</bool>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QLineEdit" name="lineEdit">
+     <widget class="QLineEdit" name="messageField">
       <property name="placeholderText">
        <string>Введите сообщение...</string>
       </property>

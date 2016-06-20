@@ -14,6 +14,7 @@ class MainWindow : public QMainWindow
     QTcpSocket* socket;
     Connection* connection;
     QLabel* statusLabel;
+    QMap<QString, QString> messagesCache;
 
     LoginMessage loginMessage;
 public:

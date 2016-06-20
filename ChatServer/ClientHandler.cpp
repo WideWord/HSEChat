@@ -118,6 +118,60 @@ ClientHandler::ClientHandler(QTcpSocket* socket, ChatServer* _server, QObject* p
             }
         }
     });
+
+    connection->setIncomingMessageHandler<MessagesRequestMessage>([this](const MessagesRequestMessage& msg) {
+        QSqlQuery query("SELECT sender, receiver, date, body FROM messages WHERE (sender=? AND receiver=?) OR (sender=? AND receiver=?) ORDER BY date");
+        query.addBindValue(username);
+        query.addBindValue(msg.contactUsername);
+        query.addBindValue(msg.contactUsername);
+        query.addBindValue(username);
+        query.exec();
+
+        MessagesMessage res;
+        res.contactUsername = msg.contactUsername;
+
+        while (query.next()) {
+            MessagesMessage::Message chatMsg;
+            chatMsg.body = query.value("body").toString();
+            chatMsg.date.setTime_t(query.value("date").toUInt());
+            chatMsg.isMyMessage = (query.value("sender").toString() == username);
+            res.messages.append(chatMsg);
+        }
+
+        connection->sendMessage(res);
+    });
+
+    connection->setIncomingMessageHandler<NewMessageMessage>([this](const NewMessageMessage& msg) {
+        QSqlQuery query("SELECT * FROM contacts WHERE (user1=? AND user2=?) OR (user1=? AND user2=?)");
+        query.addBindValue(username);
+        query.addBindValue(msg.receiver);
+        query.addBindValue(msg.receiver);
+        query.addBindValue(username);
+        query.exec();
+        if (!query.next()) {
+            return;
+        }
+
+        NewMessageMessage ack;
+        ack.sender = username;
+        ack.receiver = msg.receiver;
+        ack.date = QDateTime::currentDateTime();
+        ack.body = msg.body;
+
+        query = QSqlQuery("INSERT INTO messages(sender, receiver, date, body) VALUES(?, ?, ?, ?)");
+        query.addBindValue(ack.sender);
+        query.addBindValue(ack.receiver);
+        query.addBindValue(ack.date.toTime_t());
+        query.addBindValue(ack.body);
+        query.exec();
+
+        for (auto& client : server->clientHandlers) {
+            if (!client->loggedIn) continue;
+            if (client->username == ack.sender || client->username == ack.receiver) {
+                client->connection->sendMessage(ack);
+            }
+        }
+    });
 }
 
 void ClientHandler::sendContactList() {
