@@ -11,6 +11,7 @@ QT       -= gui
 TARGET = Common
 TEMPLATE = lib
 CONFIG += staticlib
+CONFIG += c++11
 
 SOURCES += \
     network/Connection.cpp
