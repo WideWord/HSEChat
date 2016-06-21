@@ -6,17 +6,21 @@ ClientHandler::ClientHandler(QTcpSocket* socket, ChatServer* _server, QObject* p
     connection = new Connection(socket, this);
     server = _server;
 
-    connection->setIncomingMessageHandler<LoginMessage>([this](const LoginMessage& msg) {
-        qDebug() << "Login message";
+    connect(socket, &QTcpSocket::disconnected, [this]() {
+        server->clientHandlers.removeOne(this);
+        deleteLater();
+    });
 
+    connection->setIncomingMessageHandler<LoginMessage>([this](const LoginMessage& msg) {
         if (msg.signUp) {
             QSqlQuery query("SELECT username FROM users WHERE username=?");
             query.addBindValue(msg.username);
             query.exec();
             if (query.next()) {
                 loggedIn = false;
-                qDebug() << "Signup Failure";
-                connection->sendMessage(LoginResultMessage::Failure);
+                LoginResultMessage res;
+                res.ok = false;
+                connection->sendMessage(res);
             } else {
                 QSqlQuery insertQuery("INSERT INTO users(username, password) VALUES(?, ?)");
                 insertQuery.addBindValue(msg.username);
@@ -24,8 +28,9 @@ ClientHandler::ClientHandler(QTcpSocket* socket, ChatServer* _server, QObject* p
                 insertQuery.exec();
                 loggedIn = true;
                 username = msg.username;
-                qDebug() << "Signup Ok";
-                connection->sendMessage(LoginResultMessage::Ok);
+                LoginResultMessage res;
+                res.ok = true;
+                connection->sendMessage(res);
             }
         } else {
             QSqlQuery query("SELECT username FROM users WHERE username=? AND password=?");
@@ -35,13 +40,15 @@ ClientHandler::ClientHandler(QTcpSocket* socket, ChatServer* _server, QObject* p
             if (query.next()) {
                 loggedIn = true;
                 username = msg.username;
-                qDebug() << "Login Ok";
-                connection->sendMessage(LoginResultMessage::Ok);
+                LoginResultMessage res;
+                res.ok = true;
+                connection->sendMessage(res);
                 sendContactList();
             } else {
                 loggedIn = false;
-                qDebug() << "Login Failure";
-                connection->sendMessage(LoginResultMessage::Failure);
+                LoginResultMessage res;
+                res.ok = false;
+                connection->sendMessage(res);
             }
         }
     });

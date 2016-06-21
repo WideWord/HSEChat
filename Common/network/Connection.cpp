@@ -28,8 +28,6 @@ void Connection::onSocketReadyRead() {
             if (bufferSize - sizeof(qint32) >= packetSize) {
                 QByteArray packet = buffer.mid(sizeof(qint32), packetSize);
                 buffer = buffer.right(bufferSize - (packetSize + sizeof(qint32)));
-
-                qDebug() << packet.toHex();
                 handleIncomingMessage(packet);
             } else {
                 break;

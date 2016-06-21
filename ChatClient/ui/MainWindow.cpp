@@ -83,7 +83,7 @@ MainWindow::MainWindow(QWidget *parent) :
         loginMessage.signUp = signup;
 
         int i = host.indexOf(':');
-        int port = 8000;
+        int port = 8003;
         QString h = host;
         if (i > 0) {
             port = host.mid(i + 1, host.length() - (i + 1)).toInt();
@@ -114,7 +114,7 @@ MainWindow::MainWindow(QWidget *parent) :
     });
 
     connection->setIncomingMessageHandler<LoginResultMessage>([this](LoginResultMessage result) {
-        if (result == LoginResultMessage::Ok) {
+        if (result.ok) {
             setEnabled(true);
             statusLabel->setText("Подключён");
         } else {

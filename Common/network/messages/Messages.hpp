@@ -16,14 +16,13 @@ struct LoginMessage {
     }
 };
 
-enum class LoginResultMessage : qint8 {
-    Ok = 0,
-    Failure = 1,
-};
+struct LoginResultMessage {
+    bool ok;
 
-inline void operator%(LoginResultMessage& msg, Serializer& s) {
-    (qint8&)msg %s;
-}
+    void operator%(Serializer& s) {
+        ok %s;
+    }
+};
 
 struct ContactListMessage {
     QList<QString> users;
@@ -74,6 +73,12 @@ struct MessagesMessage {
         QDateTime date;
         QString body;
         bool isMyMessage;
+
+        void operator%(Serializer& s) {
+            date %s;
+            body %s;
+            isMyMessage %s;
+        }
     };
 
     QString contactUsername;
@@ -84,20 +89,6 @@ struct MessagesMessage {
         messages %s;
     }
 };
-
-inline QDataStream& operator<<(QDataStream& s, const MessagesMessage::Message& msg) {
-    s << msg.date;
-    s << msg.body;
-    s << msg.isMyMessage;
-    return s;
-}
-
-inline QDataStream& operator>>(QDataStream& s, MessagesMessage::Message& msg) {
-    s >> msg.date;
-    s >> msg.body;
-    s >> msg.isMyMessage;
-    return s;
-}
 
 struct NewMessageMessage {
     QDateTime date;
