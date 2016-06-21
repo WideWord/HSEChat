@@ -13,10 +13,14 @@ TEMPLATE = app
 
 SOURCES += main.cpp \
     ChatServer.cpp \
-    ClientHandler.cpp
+    ClientHandler.cpp \
+    ../Common/network/Connection.cpp
+
 
 HEADERS += \
     ChatServer.hpp \
-    ClientHandler.hpp
-
-LIBS += -L../Common -lCommon
+    ClientHandler.hpp \
+    ../Common/network/messages/Messages.hpp \
+    ../Common/network/Connection.hpp \
+    ../Common/network/Serializer.hpp \
+    ../Common/util/TypeIndex.hpp

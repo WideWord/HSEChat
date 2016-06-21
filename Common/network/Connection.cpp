@@ -22,9 +22,9 @@ void Connection::handleIncomingMessage(const QByteArray& packet) {
 void Connection::onSocketReadyRead() {
     buffer.append(socket->readAll());
     while (true) {
-        auto bufferSize = buffer.size();
+        size_t bufferSize = buffer.size();
         if (bufferSize > sizeof(qint32)) {
-            qint32 packetSize = *((qint32*)buffer.data());
+            size_t packetSize = *((qint32*)buffer.data());
             if (bufferSize - sizeof(qint32) >= packetSize) {
                 QByteArray packet = buffer.mid(sizeof(qint32), packetSize);
                 buffer = buffer.right(bufferSize - (packetSize + sizeof(qint32)));

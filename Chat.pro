@@ -5,7 +5,4 @@
 #-------------------------------------------------
 
 TEMPLATE = subdirs
-SUBDIRS = Common ChatClient ChatServer \
-    Common
-ChatClient.depends = Common
-ChatServer.depends = Common
+SUBDIRS = Common ChatClient ChatServer

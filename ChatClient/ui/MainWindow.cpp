@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
         connection->sendMessage(loginMessage);
     });
 
-    connect(socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error), [this](QAbstractSocket::SocketError err) {
+    connect(socket, static_cast<void (QTcpSocket::*)(QAbstractSocket::SocketError)>(&QTcpSocket::error), [this](QAbstractSocket::SocketError) {
         statusLabel->setText("Ошибка подключения");
         setEnabled(false);
 
