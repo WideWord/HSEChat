@@ -10,7 +10,6 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
-    LoginDialog loginDialog;
     QTcpSocket* socket;
     Connection* connection;
     QLabel* statusLabel;
@@ -19,6 +18,7 @@ class MainWindow : public QMainWindow
 
     LoginMessage loginMessage;
 public:
+    LoginDialog loginDialog;
     explicit MainWindow(QWidget *parent = 0);
 protected:
     virtual void showEvent(QShowEvent *ev) override;

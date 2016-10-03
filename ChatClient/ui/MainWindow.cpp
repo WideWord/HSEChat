@@ -210,5 +210,5 @@ void MainWindow::resetState() {
 void MainWindow::showEvent(QShowEvent *ev) {
     QMainWindow::showEvent(ev);
 
-    loginDialog.show();
+
 }

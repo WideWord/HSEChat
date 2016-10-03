@@ -7,6 +7,7 @@ int main(int argc, char *argv[])
 
     MainWindow wnd;
     wnd.show();
+    wnd.loginDialog.show();
 
     return a.exec();
 }
